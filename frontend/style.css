@@ -1,0 +1,46 @@
+body {
+  background-color: #f8f9fa;
+}
+
+.movie-card img {
+  height: 260px;
+  object-fit: cover;
+}
+
+.seat-grid {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(40px, 1fr));
+  gap: 8px;
+}
+
+.seat-btn {
+  border: 1px solid #ced4da;
+  background: #ffffff;
+  border-radius: 6px;
+  padding: 8px 4px;
+  font-size: 0.8rem;
+}
+
+.seat-btn.selected {
+  background: #0d6efd;
+  border-color: #0d6efd;
+  color: #ffffff;
+}
+
+.seat-btn.booked {
+  background: #adb5bd;
+  border-color: #adb5bd;
+  color: #ffffff;
+  cursor: not-allowed;
+}
+
+.confirmation-card {
+  max-width: 600px;
+}
+
+.payment-qr-image {
+  width: 320px;
+  max-width: 100%;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+}

@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Movies | Movie Booking System</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+      <div class="container">
+        <a class="navbar-brand" href="index.html">Movie Booking System</a>
+        <div class="navbar-nav ms-auto">
+          <a class="nav-link active" href="movies.html">Movies</a>
+          <a class="nav-link" href="admin-panel.html">Admin Panel</a>
+          <a class="nav-link" href="booking.html">Book Tickets</a>
+          <a class="nav-link" href="user-login.html">User Login</a>
+          <a class="nav-link" href="admin-login.html">Admin Login</a>
+          <a class="nav-link" href="register.html">Register</a>
+        </div>
+      </div>
+    </nav>
+
+    <div class="container py-4">
+      <h2 class="mb-3">Now Showing</h2>
+      <div id="moviesList" class="row g-4"></div>
+
+      <div id="adminSection" class="mt-4 d-none">
+      <hr class="my-5" />
+
+      <h3 class="mb-3">Admin Panel</h3>
+      <div id="adminAlert"></div>
+
+      <div class="row g-4">
+        <div class="col-lg-6">
+          <div class="card h-100">
+            <div class="card-body">
+              <h5 class="card-title">Add New Movie</h5>
+              <form id="addMovieForm" class="row g-3">
+                <div class="col-md-6">
+                  <input class="form-control" name="title" placeholder="Title" required />
+                </div>
+                <div class="col-md-6">
+                  <input class="form-control" name="genre" placeholder="Genre" required />
+                </div>
+                <div class="col-md-6">
+                  <input
+                    class="form-control"
+                    type="number"
+                    name="duration"
+                    placeholder="Duration (min)"
+                    required
+                  />
+                </div>
+                <div class="col-md-6">
+                  <input class="form-control" name="language" placeholder="Language" value="English" />
+                </div>
+                <div class="col-md-6">
+                  <input class="form-control" name="rating" placeholder="Rating (U/UA/A)" value="UA" />
+                </div>
+                <div class="col-12">
+                  <input class="form-control" name="posterUrl" placeholder="Poster URL" />
+                </div>
+                <div class="col-12">
+                  <textarea
+                    class="form-control"
+                    name="description"
+                    rows="3"
+                    placeholder="Description"
+                  ></textarea>
+                </div>
+                <div class="col-12">
+                  <button class="btn btn-primary" type="submit">Add Movie</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-lg-6">
+          <div class="card h-100">
+            <div class="card-body">
+              <h5 class="card-title">Add Show Timing</h5>
+              <form id="addShowForm" class="row g-3">
+                <div class="col-12">
+                  <select class="form-select" id="adminMovieSelect" required></select>
+                </div>
+                <div class="col-md-6">
+                  <input class="form-control" name="theater" placeholder="Theater" required />
+                </div>
+                <div class="col-md-6">
+                  <input class="form-control" type="datetime-local" name="showTime" required />
+                </div>
+                <div class="col-md-6">
+                  <input
+                    class="form-control"
+                    type="number"
+                    name="totalSeats"
+                    value="40"
+                    min="1"
+                    required
+                  />
+                </div>
+                <div class="col-md-6">
+                  <input
+                    class="form-control"
+                    type="number"
+                    name="price"
+                    placeholder="Ticket Price"
+                    min="1"
+                    max="49"
+                    required
+                  />
+                  <small class="text-muted">Price must be less than ₹50.</small>
+                </div>
+                <div class="col-12">
+                  <button class="btn btn-primary" type="submit">Add Show</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-5">
+        <h5>All Bookings</h5>
+        <div class="table-responsive">
+          <table class="table table-striped align-middle">
+            <thead>
+              <tr>
+                <th>Customer</th>
+                <th>Movie</th>
+                <th>Theater</th>
+                <th>Show Time</th>
+                <th>Seats</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody id="bookingsTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+      </div>
+      <div id="adminInfo" class="alert alert-info mt-4 d-none">
+        Login as admin to manage movies and show timings. <a href="admin-login.html">Admin Login</a>
+      </div>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>
