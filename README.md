@@ -1,6 +1,6 @@
-# Movie Ticket Booking System
+# Movie Booking System
 
-Simple full-stack web app for a college project.
+Simple full-stack movie ticket booking app built with Node.js, Express, MongoDB, and a static HTML/CSS/JS frontend.
 
 ## Tech Stack
 
@@ -10,110 +10,59 @@ Simple full-stack web app for a college project.
 
 ## Features
 
-### User Side
+### User
 - Register and login
-- View list of movies
-- View movie details
-- Check show timings
-- Select seats and book tickets
-- Pay using QR code (dynamic amount)
-- View booking confirmation
+- Browse movies and shows
+- Select seats and create booking
+- Pay via QR code
+- Enter UTR (transaction reference)
+- View booking confirmation after payment
 
-### Admin Side
-- Add new movies
-- Add show timings
+### Admin
+- Admin login
+- Add movies and shows
 - View all bookings
-
-## Project Structure
-
-```
-movie-booking-system
-│
-├── backend
-│   ├── server.js
-│   ├── seedData.js
-│   ├── routes
-│   │   ├── movieRoutes.js
-│   │   ├── bookingRoutes.js
-│   │   ├── authRoutes.js
-│   ├── models
-│   │   ├── User.js
-│   │   ├── Movie.js
-│   │   ├── Show.js
-│   │   ├── Booking.js
-│
-├── frontend
-│   ├── index.html
-│   ├── movies.html
-│   ├── booking.html
-│   ├── payment.html
-│   ├── confirmation.html
-│   ├── login.html
-│   ├── register.html
-│   ├── style.css
-│   └── script.js
-│
-└── package.json
-```
+- View UTR numbers in booking table
 
 ## API Endpoints
 
 - `GET /movies`
-- `POST /movies` (admin only)
 - `GET /movies/:id`
+- `POST /movies` (admin)
+- `POST /movies/:id/shows` (admin)
 - `POST /auth/register`
 - `POST /auth/login`
 - `POST /book-ticket`
-- `GET /bookings`
+- `GET /bookings` (admin)
+- `GET /bookings/:id` (owner/admin/token or accessCode)
+- `POST /bookings/:id/pay` (owner/admin/token or accessCode)
 
-Additional helper endpoints:
-- `POST /movies/:id/shows` (admin only)
-- `GET /bookings/:id` (owner/admin with token, or with `accessCode` query)
-- `POST /bookings/:id/pay` (owner/admin with token, or with `accessCode`)
+## Booking & Payment Flow
 
-### Booking Flow
+1. Select movie, show, and seats from `booking.html`
+2. Booking is created with `pending` payment status
+3. On `payment.html`, QR is shown with dynamic amount
+4. User enters UTR number and clicks **I Have Paid**
+5. Booking status becomes `paid` and confirmation opens
+6. Admin panel shows UTR in **All Bookings**
 
-The complete booking process follows this sequence:
+## Payment Configuration
 
-1. **Select Movie & Show** (`booking.html`)
-   - Browse available movies and select a show timing
-   - Choose seat count and select specific seats
-   - Click "Confirm Booking"
+Update payee details in `frontend/script.js`:
 
-2. **Payment Page** (`payment.html`)
-   - Booking is created with status `pending`
-   - QR code is displayed (uploaded image preferred, dynamic as fallback)
-   - User scans QR and completes payment
-   - Click "I Have Paid" button to mark payment complete
+- `PAYMENT_CONFIG.payeeName`
+- `PAYMENT_CONFIG.payeeUpiId`
 
-3. **Confirmation** (`confirmation.html`)
-   - Only accessible after payment is marked as `paid`
-   - Displays booking details with "Payment: Paid" status
-   - If accessed before payment, redirects back to payment.html
+Current UPI ID configured: `8073800496@ybl`
 
-**Note**: The system prevents confirmation access until payment is completed, ensuring the payment step is always enforced between booking and confirmation.
+## Admin Credentials (seeded)
 
-### Pricing Rule
+After running seed:
 
-Ticket price for every show must be less than ₹50.
+- Email: `admin@admin.com`
+- Password: `admin123`
 
-### Payment QR
-
-- Uploaded QR image is shown first on `payment.html`.
-- If uploaded QR is missing, dynamic QR is generated with exact booking amount.
-- Place your QR image at:
-	`frontend/assets/qr.jpeg`
-- Payee details for dynamic QR are configured in `frontend/script.js` under `PAYMENT_CONFIG`.
-
-### Admin Authorization Note
-
-Admin-only endpoints require:
-
-`Authorization: Bearer <jwt_token>`
-
-To test admin actions quickly, update a user's role to `admin` in MongoDB (for example, in MongoDB Compass).
-
-## Setup & Run
+## Setup
 
 ### 1) Install dependencies
 
@@ -123,42 +72,42 @@ npm install
 
 ### 2) Start MongoDB
 
-Make sure MongoDB is running locally at:
+Default DB URI:
 
 `mongodb://127.0.0.1:27017/movie_booking_system`
 
-If you want another URI, set environment variable:
+Optional custom URI (Windows PowerShell):
 
-```bash
-set MONGO_URI=your_mongodb_connection_string
+```powershell
+$env:MONGO_URI="your_mongodb_connection_string"
 ```
 
-### 3) Seed sample data (optional but recommended)
+### 3) Seed sample data + admin
 
 ```bash
 npm run seed
 ```
 
-### 4) Run server
+### 4) Start backend
 
 ```bash
-npm run dev
+npm start
 ```
 
-Server runs at:
+Backend runs at: `http://localhost:5000`
 
-`http://localhost:5000`
+### 5) Start frontend (recommended)
 
-### 5) Open frontend
+```bash
+npx http-server frontend -p 8080 -o
+```
 
-Open these files in browser:
+Frontend runs at: `http://localhost:8080`
 
-- `frontend/index.html`
-- `frontend/movies.html`
-- `frontend/booking.html`
-- `frontend/payment.html`
-- `frontend/confirmation.html`
-- `frontend/login.html`
-- `frontend/register.html`
+## Key Pages
 
-Tip: You can use VS Code Live Server extension for easier frontend browsing.
+- User login: `http://localhost:8080/user-login.html`
+- Admin login: `http://localhost:8080/admin-login.html`
+- Booking: `http://localhost:8080/booking.html`
+- Payment: `http://localhost:8080/payment.html`
+- Admin panel: `http://localhost:8080/admin-panel.html`
