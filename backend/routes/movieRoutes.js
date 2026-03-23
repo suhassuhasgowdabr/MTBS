@@ -109,4 +109,32 @@ router.post("/:id/shows", requireAuth, requireAdmin, async (req, res) => {
   }
 });
 
+// DELETE a single show timing
+router.delete("/:id/shows/:showId", requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const show = await Show.findOneAndDelete({ _id: req.params.showId, movie: req.params.id });
+    if (!show) {
+      return res.status(404).json({ message: "Show not found" });
+    }
+    res.json({ message: "Show deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Failed to delete show", error: error.message });
+  }
+});
+
+// DELETE a movie and all its shows
+router.delete("/:id", requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const movie = await Movie.findByIdAndDelete(req.params.id);
+    if (!movie) {
+      return res.status(404).json({ message: "Movie not found" });
+    }
+    await Show.deleteMany({ movie: req.params.id });
+    res.json({ message: "Movie and its shows deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Failed to delete movie", error: error.message });
+  }
+});
+
 module.exports = router;
+

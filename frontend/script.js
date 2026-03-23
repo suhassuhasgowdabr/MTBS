@@ -303,6 +303,7 @@ async function refreshAdminPanelData() {
   allMoviesCache = movies;
   renderMoviesList(movies);
   fillMovieSelect(document.getElementById("adminMovieSelect"), movies, "Select movie for show timing");
+  renderManageMoviesTable(movies);
 
   const response = await fetch(`${API_BASE_URL}/bookings`, {
     headers: getAuthHeaders(),
@@ -314,6 +315,85 @@ async function refreshAdminPanelData() {
 
   await loadBookingsTable(bookings);
   renderAdminStats(movies, bookings);
+}
+
+function renderManageMoviesTable(movies) {
+  const container = document.getElementById("manageMoviesContainer");
+  if (!container) return;
+
+  if (!movies.length) {
+    container.innerHTML = `<p class="text-muted">No movies found.</p>`;
+    return;
+  }
+
+  container.innerHTML = movies.map((movie) => {
+    const showsHtml = movie.shows && movie.shows.length
+      ? `<table class="table table-sm mb-0">
+          <thead><tr><th>Theater</th><th>Show Time</th><th>Seats</th><th>Price</th><th></th></tr></thead>
+          <tbody>
+            ${movie.shows.map((show) => `
+              <tr>
+                <td>${show.theater}</td>
+                <td>${formatDateTime(show.showTime)}</td>
+                <td>${show.availableSeats}/${show.totalSeats}</td>
+                <td>₹${show.price}</td>
+                <td>
+                  <button class="btn btn-sm btn-outline-danger" onclick="deleteShow('${movie._id}','${show._id}',this)">Delete Show</button>
+                </td>
+              </tr>`).join("")}
+          </tbody>
+        </table>`
+      : `<p class="text-muted mb-0">No shows for this movie.</p>`;
+
+    return `
+      <div class="card mb-3" id="movie-card-${movie._id}">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <strong>${movie.title}</strong> <span class="badge bg-secondary">${movie.genre}</span>
+          <button class="btn btn-sm btn-danger ms-auto" onclick="deleteMovie('${movie._id}',this)">Delete Movie</button>
+        </div>
+        <div class="card-body p-2">${showsHtml}</div>
+      </div>`;
+  }).join("");
+}
+
+async function deleteMovie(movieId, btn) {
+  if (!confirm("Delete this movie and ALL its shows? This cannot be undone.")) return;
+  btn.disabled = true;
+  btn.textContent = "Deleting...";
+  try {
+    const response = await fetch(`${API_BASE_URL}/movies/${movieId}`, {
+      method: "DELETE",
+      headers: getAuthHeaders(),
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.message || "Delete failed");
+    showAlert("adminAlert", "success", "Movie deleted successfully.");
+    await refreshAdminPanelData();
+  } catch (error) {
+    showAlert("adminAlert", "danger", error.message);
+    btn.disabled = false;
+    btn.textContent = "Delete Movie";
+  }
+}
+
+async function deleteShow(movieId, showId, btn) {
+  if (!confirm("Delete this show timing?")) return;
+  btn.disabled = true;
+  btn.textContent = "Deleting...";
+  try {
+    const response = await fetch(`${API_BASE_URL}/movies/${movieId}/shows/${showId}`, {
+      method: "DELETE",
+      headers: getAuthHeaders(),
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.message || "Delete failed");
+    showAlert("adminAlert", "success", "Show deleted successfully.");
+    await refreshAdminPanelData();
+  } catch (error) {
+    showAlert("adminAlert", "danger", error.message);
+    btn.disabled = false;
+    btn.textContent = "Delete Show";
+  }
 }
 
 async function initAdminPanelPage() {
@@ -437,7 +517,7 @@ async function initBookingPage() {
       const bookingId = result.booking._id;
       const accessCode = result.booking.accessCode;
       const accessCodePart = accessCode ? `&accessCode=${encodeURIComponent(accessCode)}` : "";
-      window.location.href = `payment.html?bookingId=${bookingId}${accessCodePart}`;
+      window.location.href = `/payment?bookingId=${bookingId}${accessCodePart}`;
     } catch (error) {
       showAlert("bookingAlert", "danger", error.message);
     }
@@ -557,7 +637,7 @@ async function initPaymentPage() {
           if (!payResponse.ok) throw new Error(payResult.message || "Payment confirmation failed");
 
           const accessCodePart = accessCode ? `&accessCode=${encodeURIComponent(accessCode)}` : "";
-          window.location.href = `confirmation.html?bookingId=${bookingId}${accessCodePart}`;
+          window.location.href = `/confirmation?bookingId=${bookingId}${accessCodePart}`;
         } catch (error) {
           showAlert("paymentAlert", "danger", error.message);
           markPaidBtn.disabled = false;
@@ -887,11 +967,63 @@ async function initAdminLoginPage() {
   await handleRoleLogin("adminLoginForm", "adminLoginAlert", "admin", "admin-panel.html");
 }
 
-async function initHomePage() {
+async function initForgotPasswordPage() {
+  const reqForm = document.getElementById("requestCodeForm");
+  const resetForm = document.getElementById("resetPasswordForm");
+  const emailInput = document.getElementById("reqEmail");
+  if (!reqForm || !resetForm) return;
+
+  reqForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const email = emailInput.value;
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/forgot-password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email })
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.message || "Request failed");
+      
+      showAlert("forgotPasswordAlert", "success", result.message + " Use this code (demo): " + result.code);
+      reqForm.classList.add('d-none');
+      resetForm.classList.remove('d-none');
+    } catch (error) {
+      showAlert("forgotPasswordAlert", "danger", error.message);
+    }
+  });
+
+  resetForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const formData = new FormData(resetForm);
+    const payload = {
+      email: emailInput.value,
+      code: formData.get("code"),
+      newPassword: formData.get("newPassword")
+    };
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/reset-password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.message || "Reset failed");
+      
+      showAlert("forgotPasswordAlert", "success", "Password updated successfully! Redirecting...");
+      setTimeout(() => window.location.href = "user-login.html", 1500);
+    } catch (error) {
+      showAlert("forgotPasswordAlert", "danger", error.message);
+    }
+  });
+}
+
+  async function initHomePage() {
   const totalMoviesEl = document.getElementById("totalMovies");
   const totalShowsEl = document.getElementById("totalShows");
   const totalBookingsEl = document.getElementById("totalBookings");
   const totalRevenueEl = document.getElementById("totalRevenue");
+  const homeAdminDashboardBtn = document.getElementById("homeAdminDashboardBtn");
 
   // Only run if we're on the home page
   if (!totalMoviesEl) return;
@@ -910,9 +1042,25 @@ async function initHomePage() {
 
     // Try to fetch bookings if admin is logged in
     const authData = getAuthData();
+    const isAdmin = authData?.token && authData?.user?.role === 'admin';
     let bookings = [];
     
-    if (authData?.token && authData?.user?.role === 'admin') {
+    if (isAdmin) {
+      if (homeAdminDashboardBtn) homeAdminDashboardBtn.style.display = '';
+      if (totalRevenueEl) {
+        const parentCol = totalRevenueEl.closest('[class*="col-md-"]');
+        if (parentCol) parentCol.style.display = '';
+      }
+      if (totalBookingsEl) {
+        const parentCol = totalBookingsEl.closest('[class*="col-md-"]');
+        if (parentCol) parentCol.style.display = '';
+      }
+      [totalMoviesEl, totalShowsEl, totalBookingsEl].forEach(el => {
+        if (!el) return;
+        const col = el.closest('[class*="col-md-"]');
+        if (col) { col.classList.remove('col-md-4'); col.classList.remove('col-md-6'); col.classList.add('col-md-3'); }
+      });
+
       try {
         const bookingsResponse = await fetch(`${API_BASE_URL}/bookings`, {
           headers: { Authorization: `Bearer ${authData.token}` }
@@ -921,9 +1069,24 @@ async function initHomePage() {
           bookings = await bookingsResponse.json();
         }
       } catch (err) {
-        // If bookings fetch fails, just use empty array
         console.log('Could not fetch bookings:', err.message);
       }
+    } else {
+      // Hide Admin buttons and sensitive stats for non-admins
+      if (homeAdminDashboardBtn) homeAdminDashboardBtn.style.display = 'none';
+      if (totalRevenueEl) {
+        const parentCol = totalRevenueEl.closest('[class*="col-md-"]');
+        if (parentCol) parentCol.style.display = 'none';
+      }
+      if (totalBookingsEl) {
+        const parentCol = totalBookingsEl.closest('[class*="col-md-"]');
+        if (parentCol) parentCol.style.display = 'none';
+      }
+      [totalMoviesEl, totalShowsEl].forEach(el => {
+        if (!el) return;
+        const col = el.closest('[class*="col-md-"]');
+        if (col) { col.classList.remove('col-md-3'); col.classList.remove('col-md-4'); col.classList.add('col-md-6'); }
+      });
     }
 
     const totalRevenue = bookings.reduce((sum, b) => sum + (Number(b.totalAmount) || 0), 0);
@@ -951,6 +1114,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   await initLoginPage();
   await initUserLoginPage();
   await initAdminLoginPage();
+  await initForgotPasswordPage();
   await initMoviesPage();
   await initAdminPanelPage();
   await initBookingPage();
